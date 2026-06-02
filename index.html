@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aprende las Horas - ¡El Juego del Reloj!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Canvas para el confeti al final del juego -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="app-container">
+    <!-- PANTALLA 1: CONFIGURACIÓN -->
+    <div id="screen-setup" class="screen active">
+      <div class="header-logo">
+        <div class="clock-icon-logo">⏰</div>
+        <h1>¡El Juego del Reloj!</h1>
+        <p class="subtitle">Aprende a decir la hora jugando con amigos</p>
+      </div>
+
+      <div class="card setup-card">
+        <h2>Configuración de la Partida</h2>
+        
+        <div class="input-group">
+          <label for="p1-name">👤 Jugador 1</label>
+          <input type="text" id="p1-name" value="Jugador 1" placeholder="Nombre de Jugador 1" maxlength="12">
+        </div>
+
+        <div class="input-group">
+          <label for="p2-name">👤 Jugador 2</label>
+          <input type="text" id="p2-name" value="Jugador 2" placeholder="Nombre de Jugador 2" maxlength="12">
+        </div>
+
+        <div class="settings-section">
+          <h3>Modo de Juego</h3>
+          <div class="toggle-buttons" id="game-mode-toggle">
+            <button class="toggle-btn active" data-mode="all">
+              <span class="btn-icon">📅</span>
+              <span class="btn-text">Todas las horas<br><small>Fácil a Difícil</small></span>
+            </button>
+            <button class="toggle-btn" data-mode="menos">
+              <span class="btn-icon">⚡</span>
+              <span class="btn-text">Solo horas "menos..."<br><small>Menos cuarto, menos diez, etc.</small></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Número de Rondas</h3>
+          <div class="round-selectors" id="rounds-selector">
+            <button class="round-btn" data-rounds="5">5</button>
+            <button class="round-btn active" data-rounds="10">10</button>
+            <button class="round-btn" data-rounds="15">15</button>
+            <button class="round-btn" data-rounds="infinite">∞ (Sin fin)</button>
+          </div>
+        </div>
+
+        <button id="btn-start-game" class="btn btn-primary btn-large">¡Empezar a Jugar! 🚀</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA 2: PANTALLA DE JUEGO PRINCIPAL -->
+    <div id="screen-game" class="screen">
+      <!-- Marcadores Superiores -->
+      <div class="scoreboard">
+        <div class="player-score-card p1-card">
+          <div class="player-avatar">🎒</div>
+          <div class="player-info">
+            <span class="player-name-label" id="hud-p1-name">Jugador 1</span>
+            <span class="player-score-value" id="hud-p1-score">0 pts</span>
+          </div>
+        </div>
+        <div class="round-counter-badge">
+          <span id="hud-round-number">Ronda 1</span>
+        </div>
+        <div class="player-score-card p2-card">
+          <div class="player-info text-right">
+            <span class="player-name-label" id="hud-p2-name">Jugador 2</span>
+            <span class="player-score-value" id="hud-p2-score">0 pts</span>
+          </div>
+          <div class="player-avatar">🎨</div>
+        </div>
+      </div>
+
+      <!-- Indicador de Turno -->
+      <div class="turn-announcement-card" id="turn-announcement">
+        <span class="turn-emoji">👇</span> Turno de <strong id="current-player-turn-name">Jugador 1</strong>
+      </div>
+
+      <!-- Reloj (Analógico o Digital) -->
+      <div class="clock-display-area">
+        <!-- Reloj Analógico (SVG) -->
+        <div id="analog-clock-container" class="clock-wrapper">
+          <svg viewBox="0 0 200 200" id="analog-clock">
+            <!-- Esfera -->
+            <circle cx="100" cy="100" r="95" class="clock-face" />
+            <!-- Borde interior -->
+            <circle cx="100" cy="100" r="90" class="clock-face-inner" />
+            <!-- Centro del reloj -->
+            <circle cx="100" cy="100" r="6" class="clock-center" />
+            <!-- Números -->
+            <g class="clock-numbers">
+              <text x="100" y="28" text-anchor="middle">12</text>
+              <text x="138" y="38" text-anchor="middle">1</text>
+              <text x="165" y="65" text-anchor="middle">2</text>
+              <text x="175" y="105" text-anchor="middle">3</text>
+              <text x="165" y="145" text-anchor="middle">4</text>
+              <text x="138" y="172" text-anchor="middle">5</text>
+              <text x="100" y="182" text-anchor="middle">6</text>
+              <text x="62" y="172" text-anchor="middle">7</text>
+              <text x="35" y="145" text-anchor="middle">8</text>
+              <text x="25" y="105" text-anchor="middle">9</text>
+              <text x="35" y="65" text-anchor="middle">10</text>
+              <text x="62" y="38" text-anchor="middle">11</text>
+            </g>
+            <!-- Líneas de minutos -->
+            <g id="clock-ticks" class="clock-ticks"></g>
+            <!-- Manecillas -->
+            <line x1="100" y1="100" x2="100" y2="52" id="hand-hour" class="clock-hand hand-hour" />
+            <line x1="100" y1="100" x2="100" y2="35" id="hand-minute" class="clock-hand hand-minute" />
+            <!-- Eje central superior -->
+            <circle cx="100" cy="100" r="3" class="clock-pin" />
+          </svg>
+        </div>
+
+        <!-- Reloj Digital -->
+        <div id="digital-clock-container" class="clock-wrapper hidden">
+          <div class="digital-clock-frame">
+            <div class="digital-screen">
+              <span id="digital-time-display">12:00</span>
+              <span id="digital-period-display">PM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opciones de Respuesta (Grid 2x2 como en la imagen) -->
+      <div class="options-grid">
+        <button class="option-btn" id="option-0" data-idx="0">Opción 1</button>
+        <button class="option-btn" id="option-1" data-idx="1">Opción 2</button>
+        <button class="option-btn" id="option-2" data-idx="2">Opción 3</button>
+        <button class="option-btn" id="option-3" data-idx="3">Opción 4</button>
+      </div>
+
+      <!-- Botón inferior para finalizar (como en la imagen) -->
+      <div class="footer-action">
+        <button id="btn-end-game-early" class="btn btn-danger btn-wide">Terminar Partida y Ver Ganador 🏆</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA 3: PASAR DISPOSITIVO (SEGURIDAD) -->
+    <div id="screen-transition" class="screen">
+      <div class="card transition-card text-center">
+        <div class="transition-icon">🔒</div>
+        <h2>¡Respuesta Guardada!</h2>
+        <p>Ahora es el turno del otro jugador.</p>
+        <div class="pass-instruction">
+          Pasa el dispositivo a:<br>
+          <strong id="next-player-transition-name">Jugador 2</strong>
+        </div>
+        <button id="btn-continue-transition" class="btn btn-primary btn-large">¡Estoy listo! Ver reloj 👀</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA 4: REVELAR RESULTADOS DE LA RONDA -->
+    <div id="screen-reveal" class="screen">
+      <div class="scoreboard">
+        <div class="player-score-card p1-card" id="reveal-p1-card">
+          <div class="player-avatar">🎒</div>
+          <div class="player-info">
+            <span class="player-name-label" id="reveal-p1-name">Jugador 1</span>
+            <span class="player-result-badge" id="reveal-p1-result">Incorrecto ❌</span>
+          </div>
+        </div>
+        <div class="player-score-card p2-card" id="reveal-p2-card">
+          <div class="player-info text-right">
+            <span class="player-name-label" id="reveal-p2-name">Jugador 2</span>
+            <span class="player-result-badge" id="reveal-p2-result">¡Correcto! ✅</span>
+          </div>
+          <div class="player-avatar">🎨</div>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <h2 id="result-round-title">Ronda Completada</h2>
+        
+        <div class="clock-display-mini" id="reveal-clock-mini">
+          <!-- Aquí se insertará una miniatura del reloj o la hora digital -->
+        </div>
+
+        <div class="correct-answer-box">
+          <span class="box-label">Hora Correcta:</span>
+          <div class="correct-text" id="reveal-correct-text">Las cinco menos cuarto</div>
+        </div>
+
+        <!-- Explicación Pedagógica -->
+        <div class="explanation-box">
+          <div class="explanation-icon">💡</div>
+          <div class="explanation-content">
+            <h4 id="explanation-title">¿Por qué se dice así?</h4>
+            <p id="explanation-text">A las 04:45 faltan 15 minutos (un cuarto de hora) para llegar a las 5. Por eso restamos de la siguiente hora: "Las cinco menos cuarto".</p>
+          </div>
+        </div>
+
+        <!-- Respuestas que dieron -->
+        <div class="players-answers-summary">
+          <div class="player-answer-row">
+            <span class="p-name" id="summary-p1-name">Jugador 1:</span>
+            <span class="p-choice" id="summary-p1-choice">Las cuatro menos cuarto ❌</span>
+          </div>
+          <div class="player-answer-row">
+            <span class="p-name" id="summary-p2-name">Jugador 2:</span>
+            <span class="p-choice" id="summary-p2-choice">Las cinco menos cuarto ✅</span>
+          </div>
+        </div>
+
+        <button id="btn-next-round" class="btn btn-success btn-large btn-wide">Siguiente Ronda ➡️</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA 5: PODIO / GANADOR FINAL -->
+    <div id="screen-gameover" class="screen">
+      <div class="header-logo">
+        <div class="trophy-icon">🏆</div>
+        <h1>¡Partida Finalizada!</h1>
+        <p class="subtitle">¡Buen trabajo aprendiendo las horas!</p>
+      </div>
+
+      <div class="card podium-card">
+        <!-- Declaración del ganador -->
+        <div class="winner-announcement" id="winner-announcement-text">
+          ¡Felicidades Jugador 2, has ganado! 🎉
+        </div>
+
+        <!-- Podio Visual -->
+        <div class="podium-container">
+          <!-- Segundo Puesto -->
+          <div class="podium-step step-2">
+            <div class="podium-avatar">🎒</div>
+            <div class="podium-name" id="podium-p-silver">Jugador 1</div>
+            <div class="podium-score" id="podium-p-silver-score">40 pts</div>
+            <div class="podium-bar">2º</div>
+          </div>
+          <!-- Primer Puesto -->
+          <div class="podium-step step-1">
+            <div class="podium-avatar-crown">👑</div>
+            <div class="podium-avatar">🎨</div>
+            <div class="podium-name" id="podium-p-gold">Jugador 2</div>
+            <div class="podium-score" id="podium-p-gold-score">80 pts</div>
+            <div class="podium-bar">1º</div>
+          </div>
+        </div>
+
+        <!-- Estadísticas Detalladas -->
+        <div class="stats-table">
+          <h3>Estadísticas de la Partida</h3>
+          <div class="stat-row">
+            <span class="stat-label">Rondas Jugadas</span>
+            <span class="stat-value" id="stats-total-rounds">10</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="player-stat-block">
+            <h4 id="stats-p1-title">Jugador 1</h4>
+            <div class="stat-row-sub">
+              <span>Aciertos:</span>
+              <strong id="stats-p1-hits">4 / 10</strong>
+            </div>
+            <div class="stat-row-sub">
+              <span>Efectividad:</span>
+              <strong id="stats-p1-pct">40%</strong>
+            </div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="player-stat-block">
+            <h4 id="stats-p2-title">Jugador 2</h4>
+            <div class="stat-row-sub">
+              <span>Aciertos:</span>
+              <strong id="stats-p2-hits">8 / 10</strong>
+            </div>
+            <div class="stat-row-sub">
+              <span>Efectividad:</span>
+              <strong id="stats-p2-pct">80%</strong>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-play-again" class="btn btn-primary btn-large btn-wide">Jugar Otra Vez 🔄</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
