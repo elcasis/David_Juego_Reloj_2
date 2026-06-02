@@ -30,6 +30,7 @@ const minuteWords = {
 };
 
 // Estado Global del Juego
+// Estado Global del Juego
 const state = {
   p1Name: "Jugador 1",
   p2Name: "Jugador 2",
@@ -37,6 +38,12 @@ const state = {
   p2Score: 0,
   p1Hits: 0,
   p2Hits: 0,
+  p1Avatar: "🎒",
+  p2Avatar: "🦊",
+  p1Streak: 0,
+  p2Streak: 0,
+  soundEnabled: true,
+  audioCtx: null,
   
   currentRound: 0,
   totalRounds: 10, // número o 'infinite'
@@ -64,7 +71,136 @@ const state = {
 document.addEventListener("DOMContentLoaded", () => {
   renderClockTicks();
   setupEventListeners();
+  setupAvatarSelectors();
+  setupSoundControl();
 });
+
+/* ==========================================================================
+   SINTETIZADOR DE EFECTOS DE SONIDO (Web Audio API)
+   ========================================================================== */
+function initAudio() {
+  if (!state.audioCtx) {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playSound(type) {
+  if (!state.soundEnabled) return;
+  initAudio();
+  
+  // Resolver bloqueo de seguridad del navegador
+  if (state.audioCtx.state === "suspended") {
+    state.audioCtx.resume();
+  }
+
+  const now = state.audioCtx.currentTime;
+
+  if (type === "click") {
+    const osc = state.audioCtx.createOscillator();
+    const gain = state.audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(state.audioCtx.destination);
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(450, now);
+    osc.frequency.exponentialRampToValueAtTime(750, now + 0.08);
+    
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    
+    osc.start(now);
+    osc.stop(now + 0.08);
+  } else if (type === "success") {
+    const osc = state.audioCtx.createOscillator();
+    const gain = state.audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(state.audioCtx.destination);
+    
+    osc.type = "triangle";
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // Do5 -> Mi5 -> Sol5 -> Do6
+    
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    
+    notes.forEach((freq, index) => {
+      osc.frequency.setValueAtTime(freq, now + index * 0.07);
+    });
+    
+    osc.start(now);
+    osc.stop(now + 0.35);
+  } else if (type === "error") {
+    const osc = state.audioCtx.createOscillator();
+    const gain = state.audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(state.audioCtx.destination);
+    
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+    
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    
+    osc.start(now);
+    osc.stop(now + 0.25);
+  } else if (type === "victory") {
+    // Fanfarria arcade al estilo retro (notas alegres en secuencia rápida)
+    const notes = [523.25, 523.25, 523.25, 523.25, 659.25, 587.33, 659.25, 783.99, 1046.50];
+    const durations = [0.08, 0.08, 0.08, 0.16, 0.16, 0.08, 0.08, 0.08, 0.35];
+    
+    let timeOffset = 0;
+    notes.forEach((freq, idx) => {
+      const oscNode = state.audioCtx.createOscillator();
+      const gainNode = state.audioCtx.createGain();
+      oscNode.connect(gainNode);
+      gainNode.connect(state.audioCtx.destination);
+      
+      oscNode.type = "triangle";
+      oscNode.frequency.setValueAtTime(freq, now + timeOffset);
+      gainNode.gain.setValueAtTime(0.08, now + timeOffset);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + timeOffset + durations[idx]);
+      
+      oscNode.start(now + timeOffset);
+      oscNode.stop(now + timeOffset + durations[idx]);
+      timeOffset += durations[idx] * 0.95;
+    });
+  }
+}
+
+function setupSoundControl() {
+  const btn = document.getElementById("btn-toggle-sound");
+  btn.addEventListener("click", () => {
+    state.soundEnabled = !state.soundEnabled;
+    btn.textContent = state.soundEnabled ? "🔊" : "🔇";
+    if (state.soundEnabled) {
+      playSound("click");
+    }
+  });
+}
+
+function setupAvatarSelectors() {
+  // Configuración de Avatares para Jugador 1
+  const p1Options = document.querySelectorAll("#p1-avatar-grid .avatar-option");
+  p1Options.forEach(opt => {
+    opt.addEventListener("click", () => {
+      p1Options.forEach(o => o.classList.remove("active"));
+      opt.classList.add("active");
+      state.p1Avatar = opt.dataset.avatar;
+      playSound("click");
+    });
+  });
+
+  // Configuración de Avatares para Jugador 2
+  const p2Options = document.querySelectorAll("#p2-avatar-grid .avatar-option");
+  p2Options.forEach(opt => {
+    opt.addEventListener("click", () => {
+      p2Options.forEach(o => o.classList.remove("active"));
+      opt.classList.add("active");
+      state.p2Avatar = opt.dataset.avatar;
+      playSound("click");
+    });
+  });
+}
 
 /* ==========================================================================
    CONFIGURACIÓN DE EVENT LISTENERS
@@ -165,14 +301,24 @@ function startGame() {
   state.p1Name = p1Val !== "" ? p1Val : "Jugador 1";
   state.p2Name = p2Val !== "" ? p2Val : "Jugador 2";
 
-  // Reset puntuaciones
+  // Reset puntuaciones y rachas
   state.p1Score = 0;
   state.p2Score = 0;
   state.p1Hits = 0;
   state.p2Hits = 0;
+  state.p1Streak = 0;
+  state.p2Streak = 0;
   state.currentRound = 0;
   
-  // Actualizar HUD names
+  // Actualizar HUD avatars y nombres
+  document.getElementById("hud-p1-avatar").textContent = state.p1Avatar;
+  document.getElementById("hud-p2-avatar").textContent = state.p2Avatar;
+  document.getElementById("reveal-p1-avatar").textContent = state.p1Avatar;
+  document.getElementById("reveal-p2-avatar").textContent = state.p2Avatar;
+  
+  document.getElementById("hud-p1-streak").classList.add("hidden");
+  document.getElementById("hud-p2-streak").classList.add("hidden");
+
   document.getElementById("hud-p1-name").textContent = state.p1Name;
   document.getElementById("hud-p2-name").textContent = state.p2Name;
   document.getElementById("reveal-p1-name").textContent = state.p1Name;
@@ -182,6 +328,7 @@ function startGame() {
   document.getElementById("stats-p1-title").textContent = state.p1Name;
   document.getElementById("stats-p2-title").textContent = state.p2Name;
 
+  playSound("click");
   nextRound();
 }
 
@@ -300,6 +447,7 @@ function updateClocksDisplay() {
    SELECCIÓN DE OPCIÓN Y TRANSICIONES
    ========================================================================== */
 function selectOption(idx) {
+  playSound("click");
   if (state.currentPlayerTurn === 1) {
     state.p1ChoiceIdx = idx;
     
@@ -331,14 +479,60 @@ function revealRoundResults() {
   const p1Correct = (p1Choice === state.correctText);
   const p2Correct = (p2Choice === state.correctText);
 
-  // Sumar puntos e hits
-  if (p1Correct) {
-    state.p1Score += 10;
-    state.p1Hits++;
+  // Reproducir Sonido de Feedback
+  if (p1Correct || p2Correct) {
+    playSound("success");
+  } else {
+    playSound("error");
   }
+
+  // Puntos y Rachas Jugador 1
+  let p1BonusText = "";
+  if (p1Correct) {
+    state.p1Streak++;
+    state.p1Hits++;
+    if (state.p1Streak >= 2) {
+      const bonus = state.p1Streak * 2;
+      state.p1Score += 10 + bonus;
+      p1BonusText = ` + 🔥 x${state.p1Streak} Bono (+${bonus})`;
+    } else {
+      state.p1Score += 10;
+    }
+  } else {
+    state.p1Streak = 0;
+  }
+
+  // Puntos y Rachas Jugador 2
+  let p2BonusText = "";
   if (p2Correct) {
-    state.p2Score += 10;
+    state.p2Streak++;
     state.p2Hits++;
+    if (state.p2Streak >= 2) {
+      const bonus = state.p2Streak * 2;
+      state.p2Score += 10 + bonus;
+      p2BonusText = ` + 🔥 x${state.p2Streak} Bono (+${bonus})`;
+    } else {
+      state.p2Score += 10;
+    }
+  } else {
+    state.p2Streak = 0;
+  }
+
+  // Actualizar Badges de Rachas en el HUD
+  const p1StBadge = document.getElementById("hud-p1-streak");
+  if (state.p1Streak >= 2) {
+    p1StBadge.textContent = `🔥 Racha x${state.p1Streak}`;
+    p1StBadge.classList.remove("hidden");
+  } else {
+    p1StBadge.classList.add("hidden");
+  }
+
+  const p2StBadge = document.getElementById("hud-p2-streak");
+  if (state.p2Streak >= 2) {
+    p2StBadge.textContent = `🔥 Racha x${state.p2Streak}`;
+    p2StBadge.classList.remove("hidden");
+  } else {
+    p2StBadge.classList.add("hidden");
   }
 
   // Actualizar UI del panel de revelación
@@ -385,24 +579,24 @@ function revealRoundResults() {
   const rP2Result = document.getElementById("reveal-p2-result");
 
   if (p1Correct) {
-    rP1Card.className = "player-score-card p1-card winner-card";
-    rP1Result.textContent = "¡Correcto! ✅ (+10 pts)";
+    rP1Card.className = "player-score-card p1-card winner-card pop";
+    rP1Result.textContent = `¡Correcto! ✅ (+10 pts${p1BonusText})`;
     rP1Result.style.color = "var(--color-success)";
-    document.getElementById("summary-p1-choice").innerHTML = `<span style="color:var(--color-success)">${p1Choice} ✅</span>`;
+    document.getElementById("summary-p1-choice").innerHTML = `<span style="color:var(--color-success)">${p1Choice} ✅${state.p1Streak >= 2 ? ' 🔥' : ''}</span>`;
   } else {
-    rP1Card.className = "player-score-card p1-card";
+    rP1Card.className = "player-score-card p1-card shake";
     rP1Result.textContent = "Incorrecto ❌";
     rP1Result.style.color = "var(--color-error)";
     document.getElementById("summary-p1-choice").innerHTML = `<span style="color:var(--color-error)">${p1Choice} ❌</span>`;
   }
 
   if (p2Correct) {
-    rP2Card.className = "player-score-card p2-card winner-card";
-    rP2Result.textContent = "¡Correcto! ✅ (+10 pts)";
+    rP2Card.className = "player-score-card p2-card winner-card pop";
+    rP2Result.textContent = `¡Correcto! ✅ (+10 pts${p2BonusText})`;
     rP2Result.style.color = "var(--color-success)";
-    document.getElementById("summary-p2-choice").innerHTML = `<span style="color:var(--color-success)">${p2Choice} ✅</span>`;
+    document.getElementById("summary-p2-choice").innerHTML = `<span style="color:var(--color-success)">${p2Choice} ✅${state.p2Streak >= 2 ? ' 🔥' : ''}</span>`;
   } else {
-    rP2Card.className = "player-score-card p2-card";
+    rP2Card.className = "player-score-card p2-card shake";
     rP2Result.textContent = "Incorrecto ❌";
     rP2Result.style.color = "var(--color-error)";
     document.getElementById("summary-p2-choice").innerHTML = `<span style="color:var(--color-error)">${p2Choice} ❌</span>`;
@@ -583,6 +777,15 @@ function getPedagogicalExplanation(h, m) {
 /* ==========================================================================
    PANTALLA FINAL: PODIO Y ESTADÍSTICAS
    ========================================================================== */
+function getRankTitle(hits, total) {
+  if (total === 0) return "🥚 Huevo del Tiempo";
+  const pct = (hits / total) * 100;
+  if (pct >= 90) return "🏆 ¡Maestro del Tiempo!";
+  if (pct >= 70) return "🚀 ¡Viajero Temporal!";
+  if (pct >= 50) return "⏰ ¡Ayudante del Reloj!";
+  return "🥚 ¡Huevo del Tiempo!";
+}
+
 function endGame() {
   // Determinar ganador
   let announcement = "";
@@ -597,26 +800,26 @@ function endGame() {
     announcement = `¡Felicidades ${state.p1Name}, has ganado la partida! 🎉`;
     goldPlayer = state.p1Name;
     goldScore = state.p1Score;
-    goldAvatar = "🎒";
+    goldAvatar = state.p1Avatar;
     silverPlayer = state.p2Name;
     silverScore = state.p2Score;
-    silverAvatar = "🎨";
+    silverAvatar = state.p2Avatar;
   } else if (state.p2Score > state.p1Score) {
     announcement = `¡Felicidades ${state.p2Name}, has ganado la partida! 🎉`;
     goldPlayer = state.p2Name;
     goldScore = state.p2Score;
-    goldAvatar = "🎨";
+    goldAvatar = state.p2Avatar;
     silverPlayer = state.p1Name;
     silverScore = state.p1Score;
-    silverAvatar = "🎒";
+    silverAvatar = state.p1Avatar;
   } else {
     announcement = `¡Ha sido un increíble empate a ${state.p1Score} puntos! 🤝`;
     goldPlayer = state.p1Name;
     goldScore = state.p1Score;
-    goldAvatar = "🎒";
+    goldAvatar = state.p1Avatar;
     silverPlayer = state.p2Name;
     silverScore = state.p2Score;
-    silverAvatar = "🎨";
+    silverAvatar = state.p2Avatar;
   }
 
   // Actualizar textos del podio
@@ -629,9 +832,15 @@ function endGame() {
   document.getElementById("podium-p-silver-score").textContent = `${silverScore} pts`;
   document.querySelector(".step-2 .podium-avatar").textContent = silverAvatar;
 
-  // Estadísticas globales
+  // Estadísticas globales y Rango
   const roundsPlayed = state.currentRound - 1;
   document.getElementById("stats-total-rounds").textContent = roundsPlayed;
+
+  // Rango Final
+  const rankP1 = getRankTitle(state.p1Hits, roundsPlayed);
+  const rankP2 = getRankTitle(state.p2Hits, roundsPlayed);
+  document.getElementById("rank-p1-badge").textContent = `Rango ${state.p1Name}: ${rankP1}`;
+  document.getElementById("rank-p2-badge").textContent = `Rango ${state.p2Name}: ${rankP2}`;
 
   // Jugador 1 estadisticas
   document.getElementById("stats-p1-hits").textContent = `${state.p1Hits} / ${roundsPlayed}`;
@@ -643,8 +852,9 @@ function endGame() {
   const p2Pct = roundsPlayed > 0 ? Math.round((state.p2Hits / roundsPlayed) * 100) : 0;
   document.getElementById("stats-p2-pct").textContent = `${p2Pct}%`;
 
-  // Lanzar Confeti si hay puntuación positiva
+  // Lanzar Confeti y Fanfarria
   if (state.p1Score > 0 || state.p2Score > 0) {
+    playSound("victory");
     startConfetti();
   }
 
