@@ -14,6 +14,11 @@
   <canvas id="confetti-canvas"></canvas>
 
   <div class="app-container">
+    <!-- Control de Sonido Global -->
+    <div class="sound-control-global">
+      <button id="btn-toggle-sound" class="btn-sound" title="Activar/Desactivar Sonido">🔊</button>
+    </div>
+
     <!-- PANTALLA 1: CONFIGURACIÓN -->
     <div id="screen-setup" class="screen active">
       <div class="header-logo">
@@ -25,14 +30,36 @@
       <div class="card setup-card">
         <h2>Configuración de la Partida</h2>
         
-        <div class="input-group">
-          <label for="p1-name">👤 Jugador 1</label>
-          <input type="text" id="p1-name" value="Jugador 1" placeholder="Nombre de Jugador 1" maxlength="12">
+        <div class="player-setup-group">
+          <div class="input-group">
+            <label for="p1-name">👤 Jugador 1</label>
+            <input type="text" id="p1-name" value="Jugador 1" placeholder="Nombre de Jugador 1" maxlength="12">
+          </div>
+          <div class="avatar-selector-label">Elige tu Avatar:</div>
+          <div class="avatar-grid" id="p1-avatar-grid">
+            <span class="avatar-option active" data-avatar="🎒">🎒</span>
+            <span class="avatar-option" data-avatar="👾">👾</span>
+            <span class="avatar-option" data-avatar="🦖">🦖</span>
+            <span class="avatar-option" data-avatar="🚀">🚀</span>
+            <span class="avatar-option" data-avatar="🦄">🦄</span>
+            <span class="avatar-option" data-avatar="🍕">🍕</span>
+          </div>
         </div>
 
-        <div class="input-group">
-          <label for="p2-name">👤 Jugador 2</label>
-          <input type="text" id="p2-name" value="Jugador 2" placeholder="Nombre de Jugador 2" maxlength="12">
+        <div class="player-setup-group">
+          <div class="input-group">
+            <label for="p2-name">👤 Jugador 2</label>
+            <input type="text" id="p2-name" value="Jugador 2" placeholder="Nombre de Jugador 2" maxlength="12">
+          </div>
+          <div class="avatar-selector-label">Elige tu Avatar:</div>
+          <div class="avatar-grid" id="p2-avatar-grid">
+            <span class="avatar-option" data-avatar="🎨">🎨</span>
+            <span class="avatar-option active" data-avatar="🦊">🦊</span>
+            <span class="avatar-option" data-avatar="🐼">🐼</span>
+            <span class="avatar-option" data-avatar="🍩">🍩</span>
+            <span class="avatar-option" data-avatar="🦁">🦁</span>
+            <span class="avatar-option" data-avatar="⚽">⚽</span>
+          </div>
         </div>
 
         <div class="settings-section">
@@ -68,10 +95,11 @@
       <!-- Marcadores Superiores -->
       <div class="scoreboard">
         <div class="player-score-card p1-card">
-          <div class="player-avatar">🎒</div>
+          <div class="player-avatar" id="hud-p1-avatar">🎒</div>
           <div class="player-info">
             <span class="player-name-label" id="hud-p1-name">Jugador 1</span>
             <span class="player-score-value" id="hud-p1-score">0 pts</span>
+            <span class="streak-badge hidden" id="hud-p1-streak">🔥 x0</span>
           </div>
         </div>
         <div class="round-counter-badge">
@@ -81,8 +109,9 @@
           <div class="player-info text-right">
             <span class="player-name-label" id="hud-p2-name">Jugador 2</span>
             <span class="player-score-value" id="hud-p2-score">0 pts</span>
+            <span class="streak-badge hidden" id="hud-p2-streak">🔥 x0</span>
           </div>
-          <div class="player-avatar">🎨</div>
+          <div class="player-avatar" id="hud-p2-avatar">🎨</div>
         </div>
       </div>
 
@@ -170,7 +199,7 @@
     <div id="screen-reveal" class="screen">
       <div class="scoreboard">
         <div class="player-score-card p1-card" id="reveal-p1-card">
-          <div class="player-avatar">🎒</div>
+          <div class="player-avatar" id="reveal-p1-avatar">🎒</div>
           <div class="player-info">
             <span class="player-name-label" id="reveal-p1-name">Jugador 1</span>
             <span class="player-result-badge" id="reveal-p1-result">Incorrecto ❌</span>
@@ -181,7 +210,7 @@
             <span class="player-name-label" id="reveal-p2-name">Jugador 2</span>
             <span class="player-result-badge" id="reveal-p2-result">¡Correcto! ✅</span>
           </div>
-          <div class="player-avatar">🎨</div>
+          <div class="player-avatar" id="reveal-p2-avatar">🎨</div>
         </div>
       </div>
 
@@ -234,6 +263,12 @@
         <!-- Declaración del ganador -->
         <div class="winner-announcement" id="winner-announcement-text">
           ¡Felicidades Jugador 2, has ganado! 🎉
+        </div>
+
+        <!-- Rango / Ranks -->
+        <div class="ranks-container">
+          <div class="rank-result-badge" id="rank-p1-badge">Rango J1: 🥚 Huevo del Tiempo</div>
+          <div class="rank-result-badge" id="rank-p2-badge">Rango J2: 🏆 Maestro del Tiempo</div>
         </div>
 
         <!-- Podio Visual -->
