@@ -995,3 +995,179 @@ h1 {
     height: 200px;
   }
 }
+
+/* ==========================================================================
+   NUEVOS ESTILOS DE GAMIFICACIÓN E INTERACTIVIDAD
+   ========================================================================== */
+
+/* Control de Sonido */
+.sound-control-global {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+}
+
+.btn-sound {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  font-size: 1.4rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-sound:hover {
+  transform: scale(1.1);
+  background: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-sound:active {
+  transform: scale(0.95);
+}
+
+body.theme-night .btn-sound {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Racha de fuego (Streak Badge) */
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  margin-top: 4px;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+  animation: pulse 1s infinite alternate;
+  width: fit-content;
+}
+
+.player-score-card.p2-card .streak-badge {
+  align-self: flex-end;
+}
+
+/* Selector de Avatares en la Configuración */
+.player-setup-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(248, 250, 252, 0.5);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+body.theme-night .player-setup-group {
+  background: rgba(15, 23, 42, 0.3);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.avatar-selector-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.avatar-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.avatar-option {
+  font-size: 1.6rem;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.avatar-option:hover {
+  transform: scale(1.18);
+  box-shadow: var(--shadow-sm);
+}
+
+.avatar-option.active {
+  border-color: var(--color-p1);
+  background-color: var(--color-p1-light);
+  transform: scale(1.15) rotate(5deg);
+  box-shadow: var(--shadow-md);
+}
+
+#p2-avatar-grid .avatar-option.active {
+  border-color: var(--color-p2);
+  background-color: var(--color-p2-light);
+}
+
+body.theme-night .avatar-option {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* Rango final */
+.ranks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
+.rank-result-badge {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  text-align: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+  animation: scaleIn 0.3s ease forwards;
+}
+
+body.theme-night .rank-result-badge {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Animación de sacudida (error) y salto (acierto) en las opciones */
+.option-btn.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.option-btn.pop {
+  animation: pop 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
